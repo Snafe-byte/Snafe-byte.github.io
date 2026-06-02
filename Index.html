@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant League - Analyse Statistique des Cotes</title>
+    <style>
+        :root {
+            --bg: #0d0f17;
+            --surface: #161b25;
+            --surface-light: #1e2433;
+            --surface-lighter: #252d3d;
+            --text: #e8ecf1;
+            --text-secondary: #a0a9b8;
+            --text-muted: #6b7280;
+            --accent: #5b8def;
+            --accent-gradient: linear-gradient(135deg, #4f7df3, #7b5cea);
+            --accent-glow: rgba(79, 125, 243, 0.25);
+            --green: #34d399;
+            --green-bg: rgba(52, 211, 153, 0.12);
+            --orange: #f59e4b;
+            --orange-bg: rgba(245, 158, 75, 0.12);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.12);
+            --blue: #60a5fa;
+            --blue-bg: rgba(96, 165, 250, 0.12);
+            --border: #2a3140;
+            --border-focus: #4f7df3;
+            --radius-sm: 10px;
+            --radius: 14px;
+            --radius-lg: 20px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.55);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 16px 12px 40px;
+            line-height: 1.5;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(79, 125, 243, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(123, 92, 234, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 20% 80%, rgba(52, 211, 153, 0.04) 0%, transparent 50%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ---- En-tête ---- */
+        .header {
+            text-align: center;
+            padding: 10px 0 4px;
+        }
+        .header .icon-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 2px;
+        }
+        .header .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 6px 20px var(--accent-glow);
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #e8ecf1 0%, #bcc5d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        /* ---- Cartes ---- */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 18px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+            pointer-events: none;
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            letter-spacing: -0.2px;
+        }
+        .card-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            flex-shrink: 0;
+        }
+
+        /* ---- Formulaire ---- */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .input-wrapper {
+            flex: 1;
+            min-width: 80px;
+            position: relative;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 13px 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: var(--font);
+            background: var(--surface-light);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            outline: none;
+            transition: var(--transition);
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .input-wrapper input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+        .input-wrapper input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 4px rgba(79, 125, 243, 0.1);
+            background: var(--surface-lighter);
+        }
+        .input-wrapper .input-tag {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: var(--surface);
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            pointer-events: none;
+        }
+        .optional-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--surface-light);
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-left: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        /* ---- Bouton ---- */
+        .btn-analyze {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: var(--font);
+            letter-spacing: -0.2px;
+            color: #fff;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 28px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            margin-top: 4px;
+        }
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 36px rgba(79, 125, 243, 0.35);
+        }
+        .btn-analyze:active {
+            transform: scale(0.97);
+            transition: 0.1s;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .btn-analyze::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            border-radius: inherit;
+        }
+        .btn-analyze .btn-icon {
+            margin-right: 6px;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        .btn-analyze:active .btn-icon {
+            transform: rotate(15deg);
+        }
+
+        /* ---- Résultats ---- */
+        .results-container {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeSlideUp 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        .results-container.visible {
+            display: flex;
+        }
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .result-card .result-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .result-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .result-main .outcome {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+        }
+        .badge-high {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+        .badge-mid {
+            background: var(--orange-bg);
+            color: var(--orange);
+        }
+        .badge-low {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+        .badge-info {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        /* Barre de progression */
+        .progress-bar-wrap {
+            background: var(--surface-light);
+            border-radius: 20px;
+            height: 10px;
+            overflow: hidden;
+            margin-top: 6px;
+            flex: 1;
+            min-width: 80px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+            background: var(--accent-gradient);
+        }
+        .progress-bar-fill.high {
+            background: linear-gradient(90deg, #34d399, #22c55e);
+        }
+        .progress-bar-fill.mid {
+            background: linear-gradient(90deg, #f59e4b, #f97316);
+        }
+        .progress-bar-fill.low {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        .score-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .score-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--surface-light);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            gap: 10px;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+        .score-list li:hover {
+            border-color: var(--border);
+            background: var(--surface-lighter);
+        }
+        .score-list .score-rank {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .rank-1 {
+            background: #fbbf24;
+            color: #1a1a0a;
+        }
+        .rank-2 {
+            background: #94a3b8;
+            color: #1a1a1a;
+        }
+        .rank-3 {
+            background: #cd853f;
+            color: #1a0f05;
+        }
+        .score-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            flex: 1;
+            text-align: center;
+        }
+        .score-prob {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        /* Total buts */
+        .goals-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .goals-chip {
+            flex: 1;
+            min-width: 50px;
+            text-align: center;
+            padding: 10px 8px;
+            background: var(--surface-light);
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+        .goals-chip.highlight {
+            border-color: var(--accent);
+            background: var(--surface-lighter);
+            box-shadow: 0 0 16px var(--accent-glow);
+            color: #fff;
+        }
+
+        /* Marge info */
+        .margin-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px 0;
+            letter-spacing: 0.3px;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 380px) {
+            .card {
+                padding: 14px 12px;
+            }
+            .input-wrapper input {
+                padding: 11px 10px;
+                font-size: 0.9rem;
+            }
+            .btn-analyze {
+                padding: 13px 16px;
+                font-size: 0.95rem;
+            }
+            .result-main .outcome {
+                font-size: 1.25rem;
+            }
+            .header h1 {
+                font-size: 1.15rem;
+            }
+        }
+        @media (min-width: 420px) {
+            .card {
+                padding: 22px 20px;
+            }
+        }
+    </style>
+    <!-- Police Inter depuis Google Fonts (optionnelle, fallback système inclus) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- En-tête -->
+        <header class="header">
+            <div class="icon-row">
+                <div class="logo-icon">⚽</div>
+                <h1>Instant League</h1>
+            </div>
+            <p class="subtitle">Analyse statistique des cotes</p>
+        </header>
+
+        <!-- Carte de saisie -->
+        <div class="card" id="inputCard">
+            <div class="card-title">
+                <span class="dot"></span> Cotes du match
+            </div>
+            <form id="oddsForm" autocomplete="off" novalidate>
+                <!-- Cotes 1X2 -->
+                <div class="form-group">
+                    <span class="form-label">Résultat 1X2</span>
+                    <div class="input-row">
+                        <div class="input-wrapper">
+                            <span class="input-tag">1</span>
+                            <input type="number" id="cote1" step="0.01" min="1.01" max="99" placeholder="ex: 2.10" required inputmode="decimal">
+                        </div>
+                        <div class="input-wrapper">
+                            <span class="input-tag">X</span>
+                            <input type="number" id="coteX" step="0.01" min="1.01" max="99" placeholder="ex: 3.40" required inputmode="decimal">
+                        </div>
+                        <div class="input-wrapper">
+                            <span class="input-tag">2</span>
+                            <input type="number" id="cote2" step="0.01" min="1.01" max="99" placeholder="ex: 3.80" required inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+                <!-- Cotes Over/Under 2.5 (optionnel) -->
+                <div class="form-group">
+                    <span class="form-label">
+                        Over / Under 2.5 buts
+                        <span class="optional-badge">Optionnel</span>
+                    </span>
+                    <div class="input-row">
+                        <div class="input-wrapper">
+                            <span class="input-tag">Over</span>
+                            <input type="number" id="coteOver" step="0.01" min="1.01" max="99" placeholder="ex: 1.85" inputmode="decimal">
+                        </div>
+                        <div class="input-wrapper">
+                            <span class="input-tag">Under</span>
+                            <input type="number" id="coteUnder" step="0.01" min="1.01" max="99" placeholder="ex: 1.95" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+                <!-- Bouton d'analyse -->
+                <button type="submit" class="btn-analyze">
+                    <span class="btn-icon">🔍</span> Analyser le match
+                </button>
+            </form>
+            <p class="margin-info" id="marginDisplay"></p>
+        </div>
+
+        <!-- Zone des résultats (masquée par défaut) -->
+        <div class="results-container" id="resultsContainer">
+            <!-- Carte : Résultat le plus probable -->
+            <div class="result-card" id="cardOutcome">
+                <div class="result-title">📊 Résultat le plus probable</div>
+                <div class="result-main">
+                    <span class="outcome" id="outcomeText">—</span>
+                    <span class="badge" id="outcomeBadge">—</span>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="outcomeBar" style="width: 0%;"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.7rem;color:var(--text-muted);">
+                    <span>Confiance</span>
+                    <span id="outcomePercent">0%</span>
+                </div>
+            </div>
+
+            <!-- Carte : Scores exacts les plus probables -->
+            <div class="result-card" id="cardScores">
+                <div class="result-title">🎯 Scores exacts les plus probables</div>
+                <ul class="score-list" id="scoreList">
+                    <li><span class="score-value">—</span><span class="score-prob">—</span></li>
+                </ul>
+            </div>
+
+            <!-- Carte : Total de buts -->
+          
